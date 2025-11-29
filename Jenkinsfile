@@ -3,12 +3,12 @@ pipeline {
     stages {
         stage('Environment Setup') {
             steps {
-                bat 'python -m pip install -r requirements.txt'
+                bat 'C:\\Users\\huzai\\AppData\\Local\\Programs\\Python\\Python310\\python.exe -m pip install -r requirements.txt'
             }
         }
         stage('Pipeline Execution') {
             steps {
-                bat 'python pipeline.py'
+                bat 'C:\\Users\\huzai\\AppData\\Local\\Programs\\Python\\Python310\\python.exe pipeline.py'
             }
         }
     }
