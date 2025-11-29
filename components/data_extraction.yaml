@@ -1,0 +1,46 @@
+name: Data extraction
+description: Downloads the dataset from a source (simulating DVC get/import or direct
+  download).
+inputs:
+- {name: data_url, type: String}
+outputs:
+- {name: output_csv, type: String}
+implementation:
+  container:
+    image: python:3.8
+    command:
+    - sh
+    - -c
+    - (PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location
+      'pandas' 'scikit-learn' || PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install
+      --quiet --no-warn-script-location 'pandas' 'scikit-learn' --user) && "$0" "$@"
+    - sh
+    - -ec
+    - |
+      program_path=$(mktemp)
+      printf "%s" "$0" > "$program_path"
+      python3 -u "$program_path" "$@"
+    - "def _make_parent_dirs_and_return_path(file_path: str):\n    import os\n   \
+      \ os.makedirs(os.path.dirname(file_path), exist_ok=True)\n    return file_path\n\
+      \ndef data_extraction(data_url, output_csv):\n    \"\"\"\n    Downloads the\
+      \ dataset from a source (simulating DVC get/import or direct download).\n  \
+      \  For this assignment, we'll fetch the California housing dataset directly\
+      \ \n    to ensure it works in the isolated container environment.\n    \"\"\"\
+      \n    import pandas as pd\n    from sklearn.datasets import fetch_california_housing\n\
+      \n    print(f\"Fetching data from {data_url}...\")\n    # In a real DVC scenario,\
+      \ we would use:\n    # import dvc.api\n    # with dvc.api.open(data_url) as\
+      \ f:\n    #     df = pd.read_csv(f)\n\n    # For simplicity and robustness in\
+      \ this demo:\n    data = fetch_california_housing()\n    df = pd.DataFrame(data.data,\
+      \ columns=data.feature_names)\n    df['target'] = data.target\n\n    df.to_csv(output_csv,\
+      \ index=False)\n    print(f\"Data saved to {output_csv}\")\n\nimport argparse\n\
+      _parser = argparse.ArgumentParser(prog='Data extraction', description='Downloads\
+      \ the dataset from a source (simulating DVC get/import or direct download).')\n\
+      _parser.add_argument(\"--data-url\", dest=\"data_url\", type=str, required=True,\
+      \ default=argparse.SUPPRESS)\n_parser.add_argument(\"--output-csv\", dest=\"\
+      output_csv\", type=_make_parent_dirs_and_return_path, required=True, default=argparse.SUPPRESS)\n\
+      _parsed_args = vars(_parser.parse_args())\n\n_outputs = data_extraction(**_parsed_args)\n"
+    args:
+    - --data-url
+    - {inputValue: data_url}
+    - --output-csv
+    - {outputPath: output_csv}

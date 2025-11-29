@@ -1,0 +1,50 @@
+name: Model evaluation
+description: Evaluates the model and saves metrics.
+inputs:
+- {name: test_csv, type: String}
+- {name: model_pkl, type: String}
+outputs:
+- {name: metrics_json, type: String}
+implementation:
+  container:
+    image: python:3.8
+    command:
+    - sh
+    - -c
+    - (PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location
+      'pandas' 'scikit-learn' 'joblib' || PIP_DISABLE_PIP_VERSION_CHECK=1 python3
+      -m pip install --quiet --no-warn-script-location 'pandas' 'scikit-learn' 'joblib'
+      --user) && "$0" "$@"
+    - sh
+    - -ec
+    - |
+      program_path=$(mktemp)
+      printf "%s" "$0" > "$program_path"
+      python3 -u "$program_path" "$@"
+    - "def _make_parent_dirs_and_return_path(file_path: str):\n    import os\n   \
+      \ os.makedirs(os.path.dirname(file_path), exist_ok=True)\n    return file_path\n\
+      \ndef model_evaluation(test_csv, \n                     model_pkl,\n       \
+      \              metrics_json):\n    \"\"\"\n    Evaluates the model and saves\
+      \ metrics.\n    \"\"\"\n    import pandas as pd\n    import joblib\n    import\
+      \ json\n    from sklearn.metrics import mean_squared_error, r2_score\n\n   \
+      \ print(\"Loading test data and model...\")\n    df = pd.read_csv(test_csv)\n\
+      \    X_test = df.drop('target', axis=1)\n    y_test = df['target']\n\n    model\
+      \ = joblib.load(model_pkl)\n\n    print(\"Predicting...\")\n    y_pred = model.predict(X_test)\n\
+      \n    mse = mean_squared_error(y_test, y_pred)\n    r2 = r2_score(y_test, y_pred)\n\
+      \n    metrics = {\n        'mse': mse,\n        'r2': r2\n    }\n\n    print(f\"\
+      Metrics: {metrics}\")\n\n    with open(metrics_json, 'w') as f:\n        json.dump(metrics,\
+      \ f)\n    print(f\"Metrics saved to {metrics_json}\")\n\nimport argparse\n_parser\
+      \ = argparse.ArgumentParser(prog='Model evaluation', description='Evaluates\
+      \ the model and saves metrics.')\n_parser.add_argument(\"--test-csv\", dest=\"\
+      test_csv\", type=str, required=True, default=argparse.SUPPRESS)\n_parser.add_argument(\"\
+      --model-pkl\", dest=\"model_pkl\", type=str, required=True, default=argparse.SUPPRESS)\n\
+      _parser.add_argument(\"--metrics-json\", dest=\"metrics_json\", type=_make_parent_dirs_and_return_path,\
+      \ required=True, default=argparse.SUPPRESS)\n_parsed_args = vars(_parser.parse_args())\n\
+      \n_outputs = model_evaluation(**_parsed_args)\n"
+    args:
+    - --test-csv
+    - {inputPath: test_csv}
+    - --model-pkl
+    - {inputPath: model_pkl}
+    - --metrics-json
+    - {outputPath: metrics_json}
