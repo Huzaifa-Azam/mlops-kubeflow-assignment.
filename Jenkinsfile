@@ -3,14 +3,12 @@ pipeline {
     stages {
         stage('Environment Setup') {
             steps {
-                sh 'pip install -r requirements.txt'
-                sh 'pip install "kfp<2.0"'
+                bat 'pip install -r requirements.txt'
             }
         }
-        stage('Pipeline Compilation') {
+        stage('Pipeline Execution') {
             steps {
-                sh 'python pipeline.py'
-                sh 'ls -l pipeline.yaml'
+                bat 'python pipeline.py'
             }
         }
     }
